@@ -5,25 +5,33 @@
 1. Include the `angular-drag-and-drop.js` script provided by this component into your app.
 2. Add `drag-and-drop` as a module dependency to your app.
 
-Repeats a template inside the dragon over a list.
+Repeats a template inside the drag-and-drop over a list. List items need to wrapped in a div in order to maintain placeholders when you move an item into another list.
 ```html
-<div drag-and-drop="item in list">
-  {{item.name}}
-</div>
-<div drag-and-drop="item in otherList">
-  {{item.name}}
-</div>
+<ul drag-and-drop="item in list">
+  <li>
+    <div>{{item.name}}</div>
+  </li>
+</ul>
+<ul drag-and-drop="item in otherList">
+  <li>
+    <div>{{item.name}}</div>
+  </li>
+</ul>
 ```
 You can drag from one onto another, and the models will be updated accordingly.
 
 It also works on objects:
 ```html
-<div drag-and-drop="(key, value) in list">
-  {{key}}: {{value}}
-</div>
-<div drag-and-drop="(key, value) in otherList">
-  {{key}}: {{value}}
-</div>
+<ul drag-and-drop="(key, value) in list">
+  <li>
+    <div>{{key}}: {{value}}</div>
+  </li>
+</ul>
+<ul drag-and-drop="(key, value) in otherList">
+  <li>
+    <div>{{key}}: {{value}}</div>
+  </li>
+</ul>
 ```
 
 
@@ -40,13 +48,16 @@ Add the `drag-and-drop-double` attribute to an element with the `drag-and-drop` 
 Example:
 ```html
 <h2>These get copied</h2>
-<div drag-and-drop="item in list" drag-and-drop-double>
-  {{item.name}}
-</div>
-<h2>These get moved</h2>
-<div drag-and-drop="item in otherList">
-  {{item.name}}
-</div>
+<ul drag-and-drop="item in list" drag-and-drop-double>
+  <li>
+    <div>{{item.name}}</div>
+  </li>
+</ul>
+<ul drag-and-drop="item in otherList">
+  <li>
+    <div>{{item.name}}</div>
+  </li>
+</ul>
 ```
 
 ### drag-and-drop-accepts
@@ -56,13 +67,16 @@ Add the `drag-and-drop-accepts` attribute to an element to get the behavior.
 Example:
 ```html
 <h2>You can only put shiny objects here</h2>h2>
-<div drag-and-drop="item in list" drag-and-drop-accepts="shinyThings">
-  {{item.name}}
-</div>
-<h2>This takes anything</h2>
-<div drag-and-drop="item in otherList">
-  {{item.name}}
-</div>
+<ul drag-and-drop="item in list" drag-and-drop-accepts="shinyThings">
+  <li>
+    <div>{{item.name}}</div>
+  </li>
+</ul>
+<ul drag-and-drop="item in otherList">
+  <li>
+    <div>{{item.name}}</div>
+  </li>
+</ul>
 ```
 
 ```javascript
