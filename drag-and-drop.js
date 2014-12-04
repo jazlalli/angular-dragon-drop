@@ -6,8 +6,8 @@
 
 'use strict';
 
-angular.module('btford.dragon-drop', []).
-  directive('btfDragon', function ($document, $compile, $rootScope) {
+angular.module('angular-drag-and-drop', []).
+  directive('dragAndDrop', function ($document, $compile, $rootScope) {
     /*
              ^                       ^
              |\   \        /        /|
@@ -15,10 +15,10 @@ angular.module('btford.dragon-drop', []).
            / /\ \ \ _ \/ _ /      /    \
           / / /\ \ {*}\/{*}      /  / \ \
           | | | \ \( (00) )     /  // |\ \
-          | | | |\ \(V""V)\    /  / | || \| 
-          | | | | \ |^--^| \  /  / || || || 
+          | | | |\ \(V""V)\    /  / | || \|
+          | | | | \ |^--^| \  /  / || || ||
          / / /  | |( WWWW__ \/  /| || || ||
-        | | | | | |  \______\  / / || || || 
+        | | | | | |  \______\  / / || || ||
         | | | / | | )|______\ ) | / | || ||
         / / /  / /  /______/   /| \ \ || ||
        / / /  / /  /\_____/  |/ /__\ \ \ \ \
@@ -32,17 +32,18 @@ angular.module('btford.dragon-drop', []).
            \   \________\_    _\               ____/
          __/   /\_____ __/   /   )\_,      _____/
         /  ___/  \uuuu/  ___/___)    \______/
-        VVV  V        VVV  V 
+        VVV  V        VVV  V
     */
     // this ASCII dragon is really important, do not remove
 
     var dragValue,
-      dragKey,
-      dragOrigin,
-      dragDuplicate = false,
-      floaty,
-      offsetX,
-      offsetY;
+        dragKey,
+        dragOrigin,
+        dragDuplicate = false,
+        floaty,
+        offsetX,
+        offsetY,
+        emptyIndex;
 
     var drag = function (ev) {
       var x = ev.clientX - offsetX,
@@ -54,7 +55,9 @@ angular.module('btford.dragon-drop', []).
 
     var remove = function (collection, index) {
       if (collection instanceof Array) {
-        return collection.splice(index, 1);
+        if (collection[index]) {
+          return collection.splice(index, 1, '');
+        }
       } else {
         var temp = collection[index];
         delete collection[index];
@@ -62,9 +65,11 @@ angular.module('btford.dragon-drop', []).
       }
     };
 
-    var add = function (collection, item, key) {
+    var add = function (collection, index, item, key) {
       if (collection instanceof Array) {
-        collection.push(item);
+        if (!collection[index]) {
+          collection.splice(index, 1, item);
+        }
       } else {
         collection[key] = item;
       }
@@ -132,31 +137,39 @@ angular.module('btford.dragon-drop', []).
       }
 
       var dropArea = getElementBehindPoint(floaty, ev.clientX, ev.clientY);
+      var position = dropArea.attr('drag-and-drop-index'); // index of drop location
 
       var accepts = function () {
-        return dropArea.attr('btf-dragon') &&
-        ( !dropArea.attr('btf-dragon-accepts') ||
-          dropArea.scope().$eval(dropArea.attr('btf-dragon-accepts'))(dragValue) );
+        return dropArea.attr('drag-and-drop') &&
+        ( !dropArea.attr('drag-and-drop-accepts') ||
+          dropArea.scope().$eval(dropArea.attr('drag-and-drop-accepts'))(dragValue) );
       };
 
+      // traverse up the DOM until you reach a node that accepts the dropped item
       while (dropArea.length > 0 && !accepts()) {
         dropArea = dropArea.parent();
       }
 
       if (dropArea.length > 0) {
-        var expression = dropArea.attr('btf-dragon');
+        var expression = dropArea.attr('drag-and-drop');
         var targetScope = dropArea.scope();
         var match = expression.match(/^\s*(.+)\s+in\s+(.*?)\s*$/);
-
         var targetList = targetScope.$eval(match[2]);
+
         targetScope.$apply(function () {
-          add(targetList, dragValue, dragKey);
+          // take item in current drop location and add it to the drag origin
+          add(dragOrigin, emptyIndex, targetList[position]);
+
+          // remove item in current drop location
+          remove(targetList, position);
+
+          // add dragged item to the current drop location
+          add(targetList, position, dragValue, dragKey);
         });
       } else if (!dragDuplicate) {
-        // no dropArea here
-        // put item back to origin
+        // no dropArea here put item back to origin
         $rootScope.$apply(function () {
-          add(dragOrigin, dragValue, dragKey);
+          add(dragOrigin, position, dragValue, dragKey);
         });
       }
 
@@ -166,14 +179,13 @@ angular.module('btford.dragon-drop', []).
 
     return {
       restrict: 'A',
-
-      compile: function (container, attr) {
+      compile: function (elm, attr) {
 
         // get the `thing in things` expression
-        var expression = attr.btfDragon;
+        var expression = attr.dragAndDrop;
         var match = expression.match(/^\s*(.+)\s+in\s+(.*?)\s*$/);
         if (!match) {
-          throw Error("Expected btfDragon in form of '_item_ in _collection_' but got '" +
+          throw Error("Expected dragAndDrop in form of '_item_ in _collection_' but got '" +
             expression + "'.");
         }
         var lhs = match[1];
@@ -186,7 +198,7 @@ angular.module('btford.dragon-drop', []).
 
         // pull out the template to re-use.
         // Improvised ng-transclude.
-        var template = container.html();
+        var template = elm.html();
 
         // wrap text nodes
         try {
@@ -196,22 +208,30 @@ angular.module('btford.dragon-drop', []).
           }
         }
         catch (e) {
-          template = angular.element('<span>' + template + '</span>');
+          template = angular.element('<li>' + template + '</li>');
         }
         var child = template.clone();
-        child.attr('ng-repeat', expression);
+        child.attr('ng-repeat', expression + ' track by $index');
+        child.attr('drag-and-drop-index', '{{$index}}');
 
-        container.html('');
-        container.append(child);
+        // necessary due to inner div on draggable item
+        var innerHTML = child.html();
+        var inner = angular.element(innerHTML.trim());
+        inner.attr('drag-and-drop-index', '{{$index}}');
+        child.html('');
+        child.append(inner);
 
-        var duplicate = container.attr('btf-double-dragon') !== undefined;
+        elm.html('');
+        elm.append(child);
+
+        var duplicate = elm.attr('drag-and-drop-double') !== undefined;
 
         return function (scope, elt, attr) {
 
-          var accepts = scope.$eval(attr.btfDragonAccepts);
+          var accepts = scope.$eval(attr.dragAndDropAccepts);
 
           if (accepts !== undefined && typeof accepts !== 'function') {
-            throw Error('Expected btfDragonAccepts to be a function.');
+            throw Error('Expected dragAndDropAccepts to be a function.');
           }
 
           var spawnFloaty = function () {
@@ -238,7 +258,7 @@ angular.module('btford.dragon-drop', []).
             if (dragValue) {
               return;
             }
-            
+
             // find the right parent
             var originElement = angular.element(ev.target);
             var originScope = originElement.scope();
@@ -263,6 +283,9 @@ angular.module('btford.dragon-drop', []).
             if (duplicate) {
               dragValue = angular.copy(dragValue);
             } else {
+              // keep track of where the item came from
+              emptyIndex = dragOrigin.indexOf(dragValue);
+
               scope.$apply(function () {
                 remove(dragOrigin, dragKey || dragOrigin.indexOf(dragValue));
               });

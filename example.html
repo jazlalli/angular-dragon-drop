@@ -2,35 +2,39 @@
 <html>
 <head>
   <title>Dragon Drop for AngularJS</title>
-  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootswatch/2.3.1/spruce/bootstrap.min.css">
+  <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootswatch/2.3.1/spruce/bootstrap.min.css">
   <style>
-    [btf-dragon] {
-      padding: 20px;
-      border: 1px solid red;
-    }
+    [drag-and-drop] {padding: 10px; margin: 20px 0; border: 1px solid red;}
+    ol, ul {list-style: none; margin: 0; padding: 0;}
+    li {list-style: none; margin: 3px 0; padding: 5px 0; border: 1px solid blue;}
+    li > div {display:inline-block;}
   </style>
 </head>
 <body ng-app="ExampleApp">
 
   <div class="container" ng-controller="MainCtrl">
-    
+
     <div class="row">
-      <h1>Dragon Drop Example</h1>
+      <h1>Drag and Drop Example</h1>
     </div>
-    
+
     <hr>
-  
+
     <div class="row">
       <div class="span6">
         <h3>Things</h3>
-        <div btf-dragon="thing in things">{{thing}}</div>
+        <ul drag-and-drop="thing in things">
+          <li><div>{{thing}}</div></li>
+        </ul>
       </div>
       <div class="span6">
         <h3>Other Things</h3>
-        <div btf-dragon="thing in otherThings">{{thing}}</div>
+        <ul drag-and-drop="thing in otherThings">
+          <li><div>{{thing}}</div></li>
+        </ul>
       </div>
     </div>
-    
+
     <hr>
 
     <div class="row">
@@ -46,13 +50,14 @@
 
   </div>
 
-  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js"></script>
-  <script src="dragon-drop.js"></script>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.3/angular.min.js"></script>
+  <script src="drag-and-drop.js"></script>
   <script>
-    angular.module('ExampleApp', ['btford.dragon-drop']).
+    angular.module('ExampleApp', ['angular-drag-and-drop']).
       controller('MainCtrl', function ($scope) {
         $scope.things = ['one', 'two', 'three'];
-        $scope.otherThings = [];
+        $scope.otherThings = ['', '', ''];
       });
   </script>
 </body>
